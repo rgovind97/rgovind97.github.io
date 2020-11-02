@@ -1,0 +1,80 @@
+<html>
+
+<!--  To run in a demo environment without installing the SDK locally:
+1. Create a blank codepen 
+3. Copy this code sample into the HTML pane in codepen,
+and replace <Your_SDK_Key>
+4. Reload your codepen by making a trivial edit to the HTML 
+(such as adding a space).
+ Click the 'purchase' button to mock experiment results
+5. Repeat step 4. a few times, then head over to the Optimizely app to
+view your experiment results
+ -->
+
+<head>
+  <title>Hello world</title>
+  <!-- Install Optimizely SDK -->
+  <script src="https://unpkg.com/@optimizely/optimizely-sdk/dist/optimizely.browser.umd.min.js"></script>
+  <!-- Add your datafile using your SDK key so you can later instantiate an  Optimizely client -->
+  <script src="https://cdn.optimizely.com/datafiles/7QJqaqQCp6nsRWq39VT8e.json/tag.js"></script>
+</head>
+
+<body>  
+  <h1>Hello world</h1>  
+  <p id="subtitle">We'll use this subtitle to show flag status</p>
+  <button>Click to mock their purchase</button>
+</body>
+
+<script>
+  // instantiate an Optimizely client from the datafile
+  var optimizelyClientInstance = window.optimizelySdk.createInstance({
+    datafile: window.optimizelyDatafile
+  });
+  /* --------------------------------
+     OPTIONAL: Add a notification listener so you can later integrate with third party analytics platforms
+     --------------------------------
+     */
+  var listenerId = optimizelyClientInstance.notificationCenter.addNotificationListener(
+    window.optimizelySdk.enums.NOTIFICATION_TYPES.DECISION,
+    function(decision) {
+      console.log(
+        `NOTIFICATION LISTENER: User bucketing event for:
+              User: ${decision.userId}
+              Variation: ${decision.decisionInfo.sourceInfo["variationKey"]}
+              Experiment: ${decision.decisionInfo.sourceInfo["experimentKey"]}`);
+      // send decision to an anayltics platform here
+    }
+  );
+  /* --------------------------------
+     OPTIONAL: to get rapid demo experiment results, generate random user ids so a user gets randomly bucketed into a variation every time you rerun
+     --------------------------------
+   */
+  function makeid() {
+    var userId = "";
+    userId = String(Math.random());
+    return userId;
+  };
+  // make a random user ID
+  var userId = makeid();
+  /* --------------------------------
+     Bucket user into a flag variation and mock experiment results
+     --------------------------------
+     */
+  // get flag enabled status
+  var enabled = optimizelyClientInstance.isFeatureEnabled('Test', userId);
+  if (enabled) {
+    // get the flag variable value, as determined by the variation the user buckets into
+    const discountAmount = optimizelyClientInstance.getFeatureVariable('Test', 'amount', userId);
+    var discount = optimizelyClientInstance.getFeatureVariableInteger('Test', 'discount', userId);
+    document.querySelector("#subtitle").innerText = "user number " + userId + " got a discount of " + discount
+  } else {
+    document.querySelector("#subtitle").innerText = "user number " + userId + "  didn't get a discount (flag disabled)"
+  }
+  const button = document.querySelector('button')
+  button.addEventListener('click', function(e) {
+    optimizelyClientInstance.track('purchase', userId);
+    console.log("Optimizely tracked a purchase event to show in experiment results")
+  })
+</script>
+
+</html>
